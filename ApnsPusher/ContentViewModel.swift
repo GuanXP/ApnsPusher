@@ -105,10 +105,6 @@ class ContentViewModel: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = payload.data(using: String.Encoding.utf8)
-        
-        if topic.isEmpty {
-            topic = "com.faradayfuture.FFCtrl"
-        }
         request.addValue(topic, forHTTPHeaderField: "apns-topic")
         
         if !collapseID.isEmpty {
@@ -169,8 +165,10 @@ class ContentViewModel: ObservableObject {
         if let summary = SecCertificateCopySubjectSummary(cert) as String? {
             let header = "Apple Push Services:"
             if let _ = summary.range(of: header) {
-                self.topic = String(summary.suffix(summary.count - header.count))
-                    .trimmingCharacters( in : .whitespaces)
+                if self.topic.isEmpty { //use topic in certificate if absent
+                    self.topic = String(summary.suffix(summary.count - header.count))
+                        .trimmingCharacters( in : .whitespaces)
+                }
             } else {
                 setLog(NSLocalizedString("Invalid certificate file", comment: ""))
                 return
