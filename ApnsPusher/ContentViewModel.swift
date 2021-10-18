@@ -200,7 +200,7 @@ class ContentViewModel: ObservableObject {
 }
 
 extension ContentViewModel {
-    private func save() {
+    func save() {
         UserDefaults.standard.set(certificateFile, forKey: "certificateFile")
         UserDefaults.standard.set(self.deviceTokens2StringArray(), forKey: "deviceTokens")
         UserDefaults.standard.set(priority, forKey: "priority")
@@ -318,7 +318,7 @@ class DeviceToken: ObservableObject {
         } else if pushed == true {
             self.pushStateImageName = "checkmark.circle.fill"
         } else {
-            self.pushStateImageName = "checkmark.circle.trianglebadge.exclamationmark"
+            self.pushStateImageName = "exclamationmark.circle.fill"
         }
     }
 }

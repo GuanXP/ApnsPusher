@@ -99,15 +99,9 @@ struct TokenList: View {
                 }
                 
                 ForEach(model.deviceTokens.indices, id: \.self) { index in
-                    HStack {
-                        Image(systemName: "minus.circle")
-                            .onTapGesture {
-                                self.model.deviceTokens.remove(at: index)
-                            }
-                        Text(model.deviceTokens[index].token)
-                        Spacer()
-                        Toggle("", isOn: $model.deviceTokens[index].selected)
-                        Image(systemName: model.deviceTokens[index].pushStateImageName)
+                    DeviceTokenView(deviceToken: model.deviceTokens[index]) {
+                        self.model.deviceTokens.remove(at: index)
+                        self.model.save()
                     }
                 }
             }.frame(height: 180)
@@ -120,7 +114,30 @@ struct TokenList: View {
         }
         
         self.model.deviceTokens.append(DeviceToken(token: self.newToken))
+        self.model.save()
         self.newToken = ""
+    }
+}
+
+struct DeviceTokenView: View {
+    @ObservedObject var deviceToken: DeviceToken
+    let onMinus: ()->Void
+    
+    init(deviceToken: DeviceToken, minusClicked: @escaping ()->Void) {
+        self.deviceToken = deviceToken
+        self.onMinus = minusClicked
+    }
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "minus.circle").onTapGesture {
+                self.onMinus()
+            }
+            Text(deviceToken.token)
+            Spacer()
+            Toggle("", isOn: $deviceToken.selected)
+            Image(systemName: deviceToken.pushStateImageName)
+        }
     }
 }
 
