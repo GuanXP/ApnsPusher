@@ -55,17 +55,16 @@ class ContentViewModel: ObservableObject {
     }
     
     func send() {
-        save()
-//        guard checkParams() else {
-//            return
-//        }
-//        self.save()
-//
-//        for deviceToken in deviceTokens {
-//            if deviceToken.selected {
-//                self.sendToDevice(deviceToken: deviceToken)
-//            }
-//        }
+        guard checkParams() else {
+            return
+        }
+        self.save()
+
+        for deviceToken in deviceTokens {
+            if deviceToken.selected {
+                self.sendToDevice(deviceToken: deviceToken)
+            }
+        }
     }
     
     private func sendToDevice(deviceToken: DeviceToken) {
