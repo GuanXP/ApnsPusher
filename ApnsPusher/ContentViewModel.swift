@@ -72,6 +72,10 @@ class ContentViewModel: ObservableObject {
         guard let request = makeRequest(deviceToken: deviceToken.token) else {
             return
         }
+        guard request.httpBody != nil else {
+            self.setLog(NSLocalizedString("Invalid payload format", comment: ""))
+            return
+        }
         
         let task = session?.dataTask(with: request) { [weak self] data, response, error in
             let resp = response as? HTTPURLResponse
@@ -104,7 +108,7 @@ class ContentViewModel: ObservableObject {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.httpBody = payload.data(using: String.Encoding.utf8)
+        request.httpBody = payloadData()
         request.addValue(topic, forHTTPHeaderField: "apns-topic")
         
         if !collapseID.isEmpty {
@@ -112,9 +116,20 @@ class ContentViewModel: ObservableObject {
         }
 
         request.addValue("\(priority)", forHTTPHeaderField: "apns-priority")
-
         request.addValue(payloadType, forHTTPHeaderField: "apns-push-type")
         return request
+    }
+    
+    private func payloadData() -> Data? {
+        // convert payload string to single line string
+        guard let data = payload.data(using: String.Encoding.utf8) else {
+            return nil
+        }
+        guard let jsonObj = try? JSONSerialization.jsonObject(with: data) else {
+            return nil
+        }
+        
+        return try? JSONSerialization.data(withJSONObject: jsonObj)
     }
     
     private func checkParams() -> Bool {
