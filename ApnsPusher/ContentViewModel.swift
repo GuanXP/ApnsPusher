@@ -16,9 +16,13 @@ class ContentViewModel: ObservableObject {
     static let defaultPayload =
     """
     {
-        "aps":{
-            "alert":"The push message by ApnsPusher",
-            "badge":6,
+        "aps": {
+            "alert" : {
+                "title" : "Push message",
+                "subtitle" : "Test push notification",
+                "body" : "You can handle it or dismiss"
+            },
+            "badge": 6,
             "sound": "default"
         }
     }
@@ -125,10 +129,11 @@ class ContentViewModel: ObservableObject {
         guard let data = payload.data(using: String.Encoding.utf8) else {
             return nil
         }
-        guard let jsonObj = try? JSONSerialization.jsonObject(with: data) else {
-            return nil
+        guard let jsonObj = try? JSONSerialization.jsonObject(with: data,
+                                                              options: .mutableContainers) else {
+            return data
         }
-        
+
         return try? JSONSerialization.data(withJSONObject: jsonObj)
     }
     
@@ -324,6 +329,7 @@ class DeviceToken: ObservableObject {
             self?.updatePushed(pushed: pushed)
         }
     }
+    
     private func updatePushed(pushed: Bool?) {
         self.pushed = pushed
         if pushed == nil {
