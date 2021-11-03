@@ -10,20 +10,20 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var model = ContentViewModel()
-    @State private var fileImporterPresented = false
-    private let certificateFiles = [UTType(filenameExtension: "cer")!]
     
     var body: some View {
         VStack {
-            HStack {
-                Text(LocalizedStringKey("APNS certificate file(.cer)"))
-                TextField(LocalizedStringKey("pick a certificate file(.cer)"), text: $model.certificateFile)
-                Button(LocalizedStringKey("browse ...")) {
-                    fileImporterPresented = true
-                }
-            }.fileImporter(isPresented: $fileImporterPresented, allowedContentTypes: certificateFiles) { result in
-                if let url = try? result.get() {
-                    model.certificateFile = url.path
+            VStack {
+                Picker(LocalizedStringKey("Trusted connection"), selection: $model.connectionTech) {
+                    ForEach(ContentViewModel.connectionTechs.indices) { i in
+                        Text(ContentViewModel.connectionTechs[i])
+                            .tag(ContentViewModel.connectionTechs[i])
+                    }
+                }.frame(width: 300)
+                if model.isTokenBased {
+                    KeyTokenView(model: self.model)
+                } else {
+                    CertificateView(model: self.model)
                 }
             }
             
@@ -31,6 +31,7 @@ struct ContentView: View {
             
             HStack(spacing:40) {
                 Picker(LocalizedStringKey("priority"), selection: $model.priority) {
+                    Text("3").tag(3)
                     Text("5").tag(5)
                     Text("10").tag(10)
                 }
@@ -79,6 +80,25 @@ struct ContentView: View {
         model.hasError = false
         
         model.send()
+    }
+}
+
+struct CertificateView: View {
+    @ObservedObject var model = ContentViewModel()
+    @State private var fileImporterPresented = false
+    private let fileExtensions = [UTType(filenameExtension: "cer")!]
+    var body: some View {
+        HStack {
+            Text(LocalizedStringKey("APNS certificate file(.cer)"))
+            TextField(LocalizedStringKey("pick a certificate file(.cer)"), text: $model.certificateFile)
+            Button(LocalizedStringKey("browse ...")) {
+                fileImporterPresented = true
+            }
+        }.fileImporter(isPresented: $fileImporterPresented, allowedContentTypes: fileExtensions) { result in
+            if let url = try? result.get() {
+                model.certificateFile = url.path
+            }
+        }
     }
 }
 
@@ -138,6 +158,61 @@ struct DeviceTokenView: View {
             Toggle("", isOn: $deviceToken.selected)
             Image(systemName: deviceToken.pushStateImageName)
         }
+    }
+}
+
+struct KeyTokenView: View {
+    @ObservedObject var model = ContentViewModel()
+    @State private var fileImporterPresented = false
+    private let fileExtensions = [UTType(filenameExtension: "p8")!]
+    var body: some View {
+        HStack {
+            Text(LocalizedStringKey("signing key file(.p8)"))
+            TextField(LocalizedStringKey("pick a signing key file(.cer)"), text: $model.p8File)
+            Button(LocalizedStringKey("browse ...")) {
+                fileImporterPresented = true
+            }
+            Text(LocalizedStringKey("key ID"))
+            TextField(LocalizedStringKey("input key ID here"), text: $model.keyID)
+            Text(LocalizedStringKey("team ID"))
+            TextField(LocalizedStringKey("input your team ID here"), text: $model.teamID)
+        }.fileImporter(isPresented: $fileImporterPresented, allowedContentTypes: fileExtensions) { result in
+            if let url = try? result.get() {
+                self.onFilePicked(path: url.path)
+            }
+        }
+    }
+    
+    private func onFilePicked(path: String) {
+        model.p8File = path
+        
+        // try extracting key ID from file name
+        var start = path.lastIndex(of: "/")
+        guard start != nil else {
+            return
+        }
+        start = path.index(after: start!)
+        guard start != nil else {
+            return
+        }
+        
+        let fileName = String(path.suffix(from: start!))
+        start = fileName.firstIndex(of: "_")
+        guard start != nil else {
+            return
+        }
+        start = fileName.index(after: start!)
+        guard start != nil else {
+            return
+        }
+        
+        guard let p8Range = fileName.range(of: ".p8", options: .backwards) else {
+            return
+        }
+        
+        let subStringRange = Range<String.Index>(uncheckedBounds: (lower: start!, upper: p8Range.lowerBound))
+        let keyID = String(fileName[subStringRange])
+        self.model.keyID = keyID
     }
 }
 

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A555A607273212CB0008A80A /* JWTEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A555A606273212CB0008A80A /* JWTEncoder.swift */; };
+		A555A60927322A650008A80A /* DeviceToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A555A60827322A650008A80A /* DeviceToken.swift */; };
+		A555A60C273383910008A80A /* JWTKit in Frameworks */ = {isa = PBXBuildFile; productRef = A555A60B273383910008A80A /* JWTKit */; };
 		A5D7AD4B27029DBC00B4068F /* ApnsPusherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D7AD4A27029DBC00B4068F /* ApnsPusherApp.swift */; };
 		A5D7AD4D27029DBC00B4068F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D7AD4C27029DBC00B4068F /* ContentView.swift */; };
 		A5D7AD4F27029DC000B4068F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A5D7AD4E27029DC000B4068F /* Assets.xcassets */; };
@@ -15,6 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A555A606273212CB0008A80A /* JWTEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWTEncoder.swift; sourceTree = "<group>"; };
+		A555A60827322A650008A80A /* DeviceToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceToken.swift; sourceTree = "<group>"; };
 		A5D7AD4727029DBC00B4068F /* ApnsPusher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ApnsPusher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5D7AD4A27029DBC00B4068F /* ApnsPusherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApnsPusherApp.swift; sourceTree = "<group>"; };
 		A5D7AD4C27029DBC00B4068F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -29,6 +34,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A555A60C273383910008A80A /* JWTKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -60,6 +66,8 @@
 				A5D7AD5327029DC000B4068F /* ApnsPusher.entitlements */,
 				A5D7AD5027029DC000B4068F /* Preview Content */,
 				A5D7AD5927029E6900B4068F /* ContentViewModel.swift */,
+				A555A606273212CB0008A80A /* JWTEncoder.swift */,
+				A555A60827322A650008A80A /* DeviceToken.swift */,
 			);
 			path = ApnsPusher;
 			sourceTree = "<group>";
@@ -89,6 +97,7 @@
 			);
 			name = ApnsPusher;
 			packageProductDependencies = (
+				A555A60B273383910008A80A /* JWTKit */,
 			);
 			productName = ApnsPusher;
 			productReference = A5D7AD4727029DBC00B4068F /* ApnsPusher.app */;
@@ -119,6 +128,7 @@
 			);
 			mainGroup = A5D7AD3E27029DBC00B4068F;
 			packageReferences = (
+				A555A60A273383910008A80A /* XCRemoteSwiftPackageReference "jwt-kit" */,
 			);
 			productRefGroup = A5D7AD4827029DBC00B4068F /* Products */;
 			projectDirPath = "";
@@ -146,8 +156,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A555A607273212CB0008A80A /* JWTEncoder.swift in Sources */,
 				A5D7AD4D27029DBC00B4068F /* ContentView.swift in Sources */,
 				A5D7AD4B27029DBC00B4068F /* ApnsPusherApp.swift in Sources */,
+				A555A60927322A650008A80A /* DeviceToken.swift in Sources */,
 				A5D7AD5A27029E6900B4068F /* ContentViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -344,6 +356,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A555A60A273383910008A80A /* XCRemoteSwiftPackageReference "jwt-kit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/jwt-kit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A555A60B273383910008A80A /* JWTKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A555A60A273383910008A80A /* XCRemoteSwiftPackageReference "jwt-kit" */;
+			productName = JWTKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A5D7AD3F27029DBC00B4068F /* Project object */;
 }

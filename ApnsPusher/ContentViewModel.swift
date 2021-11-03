@@ -13,6 +13,9 @@ class ContentViewModel: ObservableObject {
     static let sandboxAPI =  "https://api.sandbox.push.apple.com"
     static let productAPI = "https://api.push.apple.com"
     static let payloadTypes = ["alert", "background", "voip", "complication", "fileprovider", "mdm"]
+    static let connectionTechs = [
+        NSLocalizedString("JWT", comment: ""),
+        NSLocalizedString("certifcate", comment: "")]
     static let defaultPayload =
     """
     {
@@ -28,38 +31,59 @@ class ContentViewModel: ObservableObject {
     }
     """
     
+    @Published var connectionTech = ContentViewModel.connectionTechs[0]
+    @Published var p8File = ""
+    @Published var keyID = ""
+    @Published var teamID = ""
+    
     @Published var certificateFile = ""
     @Published var deviceTokens = Array<DeviceToken>()
     @Published var priority = 5
     @Published var collapseID = ""
     @Published var topic = ""
-    @Published var payloadType = "alert"
+    @Published var payloadType = ContentViewModel.payloadTypes[0]
     @Published var apiPath = sandboxAPI
     @Published var log = NSLocalizedString("ready", comment: "")
     @Published var hasError = false
     
     @Published var payload = ""
     
-    private var sessionDelegate = SessionDelegate()
-    private var session: URLSession?
+    private let sessionDelegate = SessionDelegate()
+    private let session: URLSession
     private var keychain: SecKeychain?
     private var cancellableSet = Set<AnyCancellable>()
+    private var keyFromP8: String = ""
     
     init() {
         SecKeychainCopyDefault(&keychain)
-        $certificateFile.sink { [unowned self] value in
-            self.openCertificate(certFile: value)
-        }.store(in: &cancellableSet)
-        
         session = URLSession(configuration: URLSessionConfiguration.default,
                              delegate: sessionDelegate,
-                             delegateQueue: nil)
+                             delegateQueue: nil)        
         
+        subscribe()
         load()
     }
     
+    var isTokenBased: Bool {
+        connectionTech == ContentViewModel.connectionTechs[0]
+    }
+    
+    private func subscribe() {
+        $certificateFile.sink { [unowned self] value in
+            self.sessionDelegate.secIdentify = nil
+        }.store(in: &cancellableSet)
+        
+        $connectionTech.sink { [unowned self] value in
+            self.sessionDelegate.tokenBased = value == ContentViewModel.connectionTechs[0]
+        }.store(in: &cancellableSet)
+        
+        $p8File.sink { [unowned self] value in
+            self.keyFromP8 = ""
+        }.store(in: &cancellableSet)
+    }
+    
     func send() {
-        guard checkParams() else {
+        guard verifyParameters() else {
             return
         }
         self.save()
@@ -81,7 +105,11 @@ class ContentViewModel: ObservableObject {
             return
         }
         
-        let task = session?.dataTask(with: request) { [weak self] data, response, error in
+        self.sendRequest(request, to: deviceToken)
+    }
+    
+    private func sendRequest(_ request: URLRequest, to deviceToken: DeviceToken) {
+        let task = session.dataTask(with: request) { [weak self] data, response, error in
             let resp = response as? HTTPURLResponse
             if resp == nil || error != nil {
                 deviceToken.setPushed(pushed: false)
@@ -102,7 +130,7 @@ class ContentViewModel: ObservableObject {
             }
         }
        
-        task?.resume()
+        task.resume()
     }
     
     private func makeRequest(deviceToken: String) -> URLRequest? {
@@ -121,11 +149,15 @@ class ContentViewModel: ObservableObject {
 
         request.addValue("\(priority)", forHTTPHeaderField: "apns-priority")
         request.addValue(payloadType, forHTTPHeaderField: "apns-push-type")
+        if self.isTokenBased {
+            let signedToken = JWTEncoder.bearer(privateKey: self.keyFromP8, keyID: self.keyID, teamID: self.teamID)
+            request.addValue("bearer \(signedToken)", forHTTPHeaderField: "authorization")
+        }
         return request
     }
     
     private func payloadData() -> Data? {
-        // convert payload string to single line string
+        // try converting payload string to single line string
         guard let data = payload.data(using: String.Encoding.utf8) else {
             return nil
         }
@@ -137,20 +169,7 @@ class ContentViewModel: ObservableObject {
         return try? JSONSerialization.data(withJSONObject: jsonObj)
     }
     
-    private func checkParams() -> Bool {
-        if self.certificateFile.isEmpty {
-            setLog(NSLocalizedString("certificate file required", comment: ""))
-            return false
-        }
-        
-        if self.sessionDelegate.secIdentify == nil {
-            self.openCertificate(certFile: self.certificateFile)
-            if self.sessionDelegate.secIdentify == nil {
-                setLog(NSLocalizedString("certificate file required", comment: ""))
-                return false
-            }
-        }
-        
+    private func verifyParameters() -> Bool {
         if topic.isEmpty {
             setLog(NSLocalizedString("topic required", comment: ""))
             return false
@@ -161,6 +180,58 @@ class ContentViewModel: ObservableObject {
             return false
         }
         
+        let tokenBased = self.connectionTech == ContentViewModel.connectionTechs[0]
+        
+        if tokenBased {
+            if !self.tryOpenP8() {
+                return false
+            }
+            if self.keyID.count != 10 {
+                setLog(NSLocalizedString("key ID required", comment: ""))
+                return false
+            }
+            if self.teamID.count != 10 {
+                setLog(NSLocalizedString("team ID required", comment: ""))
+                return false
+            }
+        } else {
+            if self.certificateFile.isEmpty {
+                setLog(NSLocalizedString("certificate file required", comment: ""))
+                return false
+            }
+            
+            if self.sessionDelegate.secIdentify == nil {
+                self.openCertificate(certFile: self.certificateFile)
+                if self.sessionDelegate.secIdentify == nil {
+                    setLog(NSLocalizedString("certificate file required", comment: ""))
+                    return false
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    private func tryOpenP8() -> Bool {
+        guard !self.p8File.isEmpty else {
+            setLog(NSLocalizedString("signing key file required", comment: ""))
+            return false
+        }
+        if self.keyFromP8.count > 128 {
+            return true
+        }
+        guard let str = try? String(contentsOf: URL(fileURLWithPath: self.p8File)) else {
+            let alert = NSLocalizedString("Unable to open signing key file. Is the file accessible? Try 'browse...' to open it", comment: "")
+            setLog(alert)
+            return false
+        }
+        guard str.range(of: "-----BEGIN PRIVATE KEY-----") != nil &&
+              str.range(of: "-----END PRIVATE KEY-----") != nil else {
+                  setLog(NSLocalizedString("Invalid signing key file.", comment: ""))
+                  return false
+              }
+        
+        self.keyFromP8 = str
         return true
     }
     
@@ -173,7 +244,8 @@ class ContentViewModel: ObservableObject {
         }
         
         guard let certificateData = try? Data(contentsOf: URL(fileURLWithPath: certFile)) else {
-            setLog(NSLocalizedString("Unable to open certificate file. Is the file accessible?", comment: ""))
+            let alert = NSLocalizedString("Unable to open certificate key file. Is the file accessible? Try 'browse...' to open it", comment: "")
+            setLog(alert)
             return
         }
         
@@ -219,6 +291,9 @@ class ContentViewModel: ObservableObject {
 
 extension ContentViewModel {
     func save() {
+        UserDefaults.standard.set(p8File, forKey: "p8File")
+        UserDefaults.standard.set(keyID, forKey: "keyID")
+        UserDefaults.standard.set(teamID, forKey: "teamID")
         UserDefaults.standard.set(certificateFile, forKey: "certificateFile")
         UserDefaults.standard.set(self.deviceTokens2StringArray(), forKey: "deviceTokens")
         UserDefaults.standard.set(priority, forKey: "priority")
@@ -230,6 +305,9 @@ extension ContentViewModel {
     }
     
     private func load() {
+        p8File = UserDefaults.standard.string(forKey: "p8File") ?? ""
+        keyID = UserDefaults.standard.string(forKey: "keyID") ?? ""
+        teamID = UserDefaults.standard.string(forKey: "teamID") ?? ""
         certificateFile = UserDefaults.standard.string(forKey: "certificateFile") ?? ""
         stringArrayToDeviceTokens(array: UserDefaults.standard.stringArray(forKey: "deviceTokens") ?? [])
         priority = UserDefaults.standard.integer(forKey: "priority")
@@ -256,6 +334,7 @@ extension ContentViewModel {
 
 class SessionDelegate: NSObject, URLSessionDelegate {
     private var clientCredential: URLCredential?
+    var tokenBased = true
     
     var secIdentify: SecIdentity? {
         didSet {
@@ -276,7 +355,7 @@ class SessionDelegate: NSObject, URLSessionDelegate {
                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
 
         if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate {
-            completionHandler(.useCredential, clientCredential)
+            completionHandler(.useCredential, tokenBased ? nil : clientCredential)
         } else if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
             let serverTrust = challenge.protectionSpace.serverTrust
             let serverCredential = serverTrust != nil ? URLCredential(trust: serverTrust!) : nil
@@ -286,58 +365,6 @@ class SessionDelegate: NSObject, URLSessionDelegate {
             } else {
                 completionHandler(.cancelAuthenticationChallenge, nil)
             }
-        }
-    }
-}
-
-class DeviceToken: ObservableObject {
-    @Published var token: String
-    @Published var selected = true
-    private var pushed: Bool? = nil
-    @Published var pushStateImageName: String = "paperplane.circle"
-    
-    init(token: String) {
-        self.token = token
-    }
-    
-    fileprivate func toJSON() -> String {
-        let dict = [
-            "token":token,
-            "selected": selected
-        ] as [String : Any]
-        guard let json = try? JSONSerialization.data(withJSONObject: dict) else {
-            return ""
-        }
-        return String(bytes: json, encoding: .utf8) ?? ""
-    }
-    
-    fileprivate static func fromJSON(json: String) -> DeviceToken {
-        let deviceToken = DeviceToken(token: "")
-        guard let data = json.data(using: .utf8) else {
-            return deviceToken
-        }
-        guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String : Any] else {
-            return deviceToken
-        }
-        deviceToken.token = dict["token"] as? String ?? ""
-        deviceToken.selected = dict["selected"] as? Bool ?? false
-        return deviceToken
-    }
-    
-    fileprivate func setPushed(pushed: Bool?) {
-        DispatchQueue.main.async { [weak self] in
-            self?.updatePushed(pushed: pushed)
-        }
-    }
-    
-    private func updatePushed(pushed: Bool?) {
-        self.pushed = pushed
-        if pushed == nil {
-            self.pushStateImageName = "paperplane.circle"
-        } else if pushed == true {
-            self.pushStateImageName = "checkmark.circle.fill"
-        } else {
-            self.pushStateImageName = "exclamationmark.circle.fill"
         }
     }
 }
