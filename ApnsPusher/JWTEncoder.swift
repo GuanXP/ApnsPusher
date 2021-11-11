@@ -9,27 +9,11 @@ import Foundation
 import JWTKit
 
 class JWTEncoder {
-    private let key: String
-    private let keyID: String
-    private let teamID: String
-    
-    private init(privateKey: String, keyID: String, teamID: String) {
-        self.key = privateKey
-        self.keyID = keyID
-        self.teamID = teamID
-    }
-    
-    static func bearer(privateKey: String, keyID: String, teamID: String) -> String {
-        JWTEncoder(privateKey: privateKey,
-                   keyID: keyID,
-                   teamID: teamID).signature()
-    }
-    
-    private func signature() -> String {
+    static func sign(key: String, keyID: String, teamID: String, timestamp: Int64) -> String {
         do {
-            let signer = try JWTSigner.es256(key: .private(pem: self.key))
-            return try signer.sign(Payload(teamID: self.teamID),
-                                   kid: JWKIdentifier(string: "\(keyID)"))
+            let signer = try JWTSigner.es256(key: .private(pem: key))
+            let payload = Payload(teamID: teamID, timestamp: timestamp)
+            return try signer.sign(payload, kid: JWKIdentifier(string: "\(keyID)"))
         } catch {
             return ""
         }
@@ -43,9 +27,8 @@ private struct Payload: JWTPayload {
     }
     
     var teamID: String
-    var timestamp: Int64 = Int64(Date().timeIntervalSince1970)
+    var timestamp: Int64
     
     func verify(using signer: JWTSigner) throws {
-        
     }
 }

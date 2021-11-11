@@ -53,6 +53,7 @@ class ContentViewModel: ObservableObject {
     private var keychain: SecKeychain?
     private var cancellableSet = Set<AnyCancellable>()
     private var keyFromP8: String = ""
+    private let jwtCache = JWTCache()
     
     init() {
         SecKeychainCopyDefault(&keychain)
@@ -150,8 +151,7 @@ class ContentViewModel: ObservableObject {
         request.addValue("\(priority)", forHTTPHeaderField: "apns-priority")
         request.addValue(payloadType, forHTTPHeaderField: "apns-push-type")
         if self.isTokenBased {
-            let signedToken = JWTEncoder.bearer(privateKey: self.keyFromP8, keyID: self.keyID, teamID: self.teamID)
-            request.addValue("bearer \(signedToken)", forHTTPHeaderField: "authorization")
+            request.addValue("bearer \(jwtCache.getSignature())", forHTTPHeaderField: "authorization")
         }
         return request
     }
@@ -208,6 +208,8 @@ class ContentViewModel: ObservableObject {
                 }
             }
         }
+        
+        jwtCache.update(key: self.keyFromP8, keyID: keyID, teamID: teamID)
         
         return true
     }

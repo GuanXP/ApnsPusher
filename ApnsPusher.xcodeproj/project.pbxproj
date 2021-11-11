@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A53B75CB273CEDE8008A6EEB /* JWTCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53B75CA273CEDE8008A6EEB /* JWTCache.swift */; };
+		A53B75CD273CEEB6008A6EEB /* JWTTimestamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53B75CC273CEEB6008A6EEB /* JWTTimestamp.swift */; };
 		A555A607273212CB0008A80A /* JWTEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A555A606273212CB0008A80A /* JWTEncoder.swift */; };
 		A555A60927322A650008A80A /* DeviceToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A555A60827322A650008A80A /* DeviceToken.swift */; };
 		A555A60C273383910008A80A /* JWTKit in Frameworks */ = {isa = PBXBuildFile; productRef = A555A60B273383910008A80A /* JWTKit */; };
@@ -18,6 +20,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A53B75CA273CEDE8008A6EEB /* JWTCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWTCache.swift; sourceTree = "<group>"; };
+		A53B75CC273CEEB6008A6EEB /* JWTTimestamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWTTimestamp.swift; sourceTree = "<group>"; };
 		A555A606273212CB0008A80A /* JWTEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JWTEncoder.swift; sourceTree = "<group>"; };
 		A555A60827322A650008A80A /* DeviceToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceToken.swift; sourceTree = "<group>"; };
 		A5D7AD4727029DBC00B4068F /* ApnsPusher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ApnsPusher.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -68,6 +72,8 @@
 				A5D7AD5927029E6900B4068F /* ContentViewModel.swift */,
 				A555A606273212CB0008A80A /* JWTEncoder.swift */,
 				A555A60827322A650008A80A /* DeviceToken.swift */,
+				A53B75CA273CEDE8008A6EEB /* JWTCache.swift */,
+				A53B75CC273CEEB6008A6EEB /* JWTTimestamp.swift */,
 			);
 			path = ApnsPusher;
 			sourceTree = "<group>";
@@ -156,7 +162,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A53B75CB273CEDE8008A6EEB /* JWTCache.swift in Sources */,
 				A555A607273212CB0008A80A /* JWTEncoder.swift in Sources */,
+				A53B75CD273CEEB6008A6EEB /* JWTTimestamp.swift in Sources */,
 				A5D7AD4D27029DBC00B4068F /* ContentView.swift in Sources */,
 				A5D7AD4B27029DBC00B4068F /* ApnsPusherApp.swift in Sources */,
 				A555A60927322A650008A80A /* DeviceToken.swift in Sources */,
