@@ -168,7 +168,7 @@ struct KeyTokenView: View {
     var body: some View {
         HStack {
             Text(LocalizedStringKey("signing key file(.p8)"))
-            TextField(LocalizedStringKey("pick a signing key file(.cer)"), text: $model.p8File)
+            TextField(LocalizedStringKey("pick a signing key file(.p8)"), text: $model.p8File)
             Button(LocalizedStringKey("browse ...")) {
                 fileImporterPresented = true
             }
